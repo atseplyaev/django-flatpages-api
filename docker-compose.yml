@@ -1,0 +1,69 @@
+version: '3.7'
+
+x-app_environment: &app_environment
+  environment:
+    - DEBUG
+    - SECRET_KEY=${SECRET_KEY:-very_secret}
+    - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-postgres}
+
+services:
+  app:
+    container_name: 'app'
+    restart: always
+    build:
+      context: ./app
+    entrypoint: ./entrypoint.sh
+    command: python manage.py runserver 0.0.0.0:8000
+    image: 'app:latest'
+    ports:
+      - 8000:8000
+    volumes:
+      - ./app/:/app/
+      - ./app/static:/app/static:delegated
+      - ./app/media:/app/media:delegated
+
+    depends_on:
+      - db
+      - redis
+    <<: *app_environment
+
+  db:
+    image: postgres:12.3-alpine
+    container_name: 'db'
+    restart: always
+    volumes:
+      - postgresdata:/var/lib/postgresql/data
+    ports:
+      - 15432:5432
+    environment:
+      - LANG=ru_RU.UTF-8
+      - LANGUAGE=ru_RU.UTF-8
+      - LC_ALL=ru_RU.UTF-8
+      - POSTGRES_PASSWORD=${DB_PASSWORD:-postgres}
+    depends_on:
+      - redis
+
+  redis:
+    image: redis:6.0-alpine
+    container_name: 'redis'
+    restart: always
+    volumes:
+      - redisdata:/data
+
+  celery:
+    container_name: 'celery'
+    image: 'app:latest'
+    restart: always
+    command: celery -A config worker -l info -B
+    volumes:
+      - media:/app/media/:delegated
+    depends_on:
+      - app
+      - redis
+    <<: *app_environment
+
+volumes:
+  media:
+  static:
+  redisdata:
+  postgresdata:
