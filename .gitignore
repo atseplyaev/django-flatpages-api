@@ -127,3 +127,10 @@ dmypy.json
 
 # Pyre type checker
 .pyre/
+
+# Jetbtains IDE
+.idea/
+
+# Static files
+app/static/
+app/media/
