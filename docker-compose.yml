@@ -61,6 +61,24 @@ services:
       - app
       - redis
     <<: *app_environment
+  runserver:
+    container_name: 'runserver'
+    image: 'app:latest'
+    restart: always
+    depends_on:
+      - celery
+      - app
+    <<: *app_environment
+
+  autotests:
+    container_name: 'autotests'
+    image: 'app:latest'
+    command: python manage.py test
+    volumes:
+      - ./app/:/app/
+    depends_on:
+      - app
+    <<: *app_environment
 
 volumes:
   media:
